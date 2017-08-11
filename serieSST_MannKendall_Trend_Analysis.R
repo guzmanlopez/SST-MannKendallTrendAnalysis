@@ -107,13 +107,20 @@ CreateRasterBrickSST <- function(sst_spdf, from, to, xmin, xmax, ymin, ymax) {
 }
 
 # RasterBrick
-sst.rb.From1990To2017 <- CreateRasterBrickSST(sst_spdf = sstReynoldsSPDF,
-                                              from = '1990-01-01',
+sst.rb.From1960To2017 <- CreateRasterBrickSST(sst_spdf = sstReynoldsSPDF,
+                                              from = '1960-01-01',
                                               to = '2017-12-01',
                                               xmin = -70, 
                                               xmax = 60, 
                                               ymin = -60, 
                                               ymax = -20) 
+
+# Write raster brick
+writeRaster(x = sst.rb.From1960To2017, filename = paste("sst.rb.From1960To2017", ".tif", sep = ""), format = "GTiff", overwritte = TRUE)
+
+# Load created raster brick
+sst.rb.From1960To2017 <- brick("sst.rb.From1960To2017.tif")
+#names(sst.rb.From1960To2017) <- paste("SST_", 19)
 
 # Plot SST ----------------------------------------------------------------
 
@@ -121,7 +128,8 @@ sst.rb.From1990To2017 <- CreateRasterBrickSST(sst_spdf = sstReynoldsSPDF,
 paises <- getMap(resolution = 'high')
 
 # Descargar bati NOAA
-bati <- getNOAA.bathy(min(sstReynolds$lon) - 0.1, max(sstReynolds$lon) + 0.1, min(sstReynolds$lat) - 0.1, max(sstReynolds$lat) + 0.1, resolution = 10, keep = TRUE)
+offset = 0.25
+bati <- getNOAA.bathy(lon1 = -70 - offset, lon2 = 60 + offset, lat1 = -60 - offset, lat2 = -20 + offset, resolution = 10, keep = TRUE)
 
 # Convertir bati a raster
 bati_raster <- as.raster(bati)
@@ -141,10 +149,10 @@ PlotRaster <- function(raster, plotBati = TRUE, plotPaises = TRUE) {
 }
 
 # Plot
-PlotRaster(raster = sst.rb.From1990To2017$SST_2000.01.01)
+PlotRaster(raster = sst.rb.From1960To2017$sst.rb.From1960To2017.680)
 
 # Mapa interactivo
-mapView(sst.rb.From1990To2017$SST_2000.01.01, legend = TRUE, col.regions = oceColors9A(n = 256), layer.name = "sst", alpha.regions = 0.8) 
+mapView(sst.rb.From1960To2017$sst.rb.From1960To2017.2, legend = TRUE, col.regions = oceColors9A(n = 256), layer.name = "sst", alpha.regions = 0.8) 
 
 # Análisis de tendencia de Mann-Kendall -----------------------------------
 
@@ -213,7 +221,7 @@ AnalisisMannKendall <- function(rb, cluster = TRUE, write = FALSE) {
     writeRaster(x = raster.sen, filename = paste("rasterSen_", name, ".tif", sep = ""), format = "GTiff", overwritte = TRUE)
     message("Terminado!")
   }
- 
+  
   message("Fin")
   gc() # liberar memoria
   return(b)
@@ -221,7 +229,7 @@ AnalisisMannKendall <- function(rb, cluster = TRUE, write = FALSE) {
 }
 
 # Calcular métricas
-sst.rb.From1990To2017.mk <- AnalisisMannKendall(rb = sst.rb.From1990To2017, cluster = TRUE, write = TRUE)
+sst.rb.From1960To2017.mk <- AnalisisMannKendall(rb = sst.rb.From1960To2017, cluster = TRUE, write = TRUE)
 
 # Escribir resultados a un archivo ----------------------------------------
 
@@ -248,7 +256,7 @@ Resultados <- function(mk, nombreArchivo) {
 }
 
 # Escribir resultados 
-df <- Resultados(mk = sst.rb.From1990To2017.mk, nombreArchivo = 'prueba')
+df <- Resultados(mk = sst.rb.From1960To2017.mk, nombreArchivo = 'prueba')
 
 # Histogramas -------------------------------------------------------------
 
@@ -278,13 +286,13 @@ hist(df$sen,
 # Análisis de los resultados ----------------------------------------------
 
 AnalisisTendencia <- function(mk, df = df, tendencia = 1, pvalor = 0.05, write = FALSE, nombreArchivo = "nombArchivo") {
-
+  
   message("Consultando sen y pvalor...")
   if (tendencia == 1) {celdas <- subset(df, sen > 0 & sl < pvalor, select = "ID")}
   if (tendencia == 0) {celdas <- subset(df, sen == 0 & sl < pvalor, select = "ID")}
   if (tendencia == -1) {celdas <- subset(df, sen < 0 & sl < pvalor, select = "ID")}
   message("Terminado...")
-    
+  
   # Armar raster
   message("Construyendo nuevo raster...")
   sen <- mk$sen
@@ -296,32 +304,41 @@ AnalisisTendencia <- function(mk, df = df, tendencia = 1, pvalor = 0.05, write =
     message("Escribiendo archivo...")
     writeRaster(x = sen, filename = paste(nombreArchivo, "_rasterSen.tif", sep = ""), format = "GTiff", overwritte = TRUE)
     message("Terminado...")
-    }
+  }
   
   message("Fin")
   return(sen)
 }
 
 # Probar significancia positiva
-sen1 <- AnalisisTendencia(mk = sst.rb.From1990To2017.mk, df = df)
+sen1 <- AnalisisTendencia(mk = sst.rb.From1960To2017.mk, df = df)
+
+# Plot
+X11()
+PlotRaster(raster = sen1)
 
 # Plot Serie de Tiempo para una celda -------------------------------------
 
 # Función PlotSerieTiempoCelda
+# r = raster
 # i = número de celda
 # f = factor de suavizado: es la proporción de puntos que influyen (valores mayores = más suavizado). Entre 0 y 1 (línea roja).
-# r = raster
 
-PlotSerieTiempoCelda <- function(i, f, r) {
+PlotSerieTiempoCelda <- function(r, xy, i = NULL, f = 1, nomVarY, nomVarX) {
   
   # Vector de datos
-  ts_cell <- as.vector(extract(r, i))
+  if (!is.null(i)) {
+    ts_cell <- as.vector(extract(r, i))
+  } else {
+    ts_cell <- as.vector(extract(r, xy))
+  }
+  
   
   # Plot
   par(bg = "#D3D7CF")
   plot(x = 1:length(ts_cell), y = ts_cell, pch = 19, col = "#785DA7",
-       xlab = "Tiempo (unidad tiempo)", 
-       ylab = "Variable (unidad variable)", 
+       xlab = paste(nomVarX), 
+       ylab = paste(nomVar), 
        #ylim = c(min(minValue(r)), max(maxValue(r))), 
        #ylim = c(0, 250),
        main = paste("Celda ", i, sep = ""))
@@ -343,10 +360,8 @@ PlotSerieTiempoCelda <- function(i, f, r) {
   
 }
 
-# Probar función para una celda i
-PlotSerieTiempoCelda(i = 150, f = 1, r = b)
-
-
-# Salida de datos ---------------------------------------------------------
+# Probar función para una posición xy
+click()
+PlotSerieTiempoCelda(r = sst.rb.From1960To2017, xy = cbind(), f = 1, nomVarY = "SST (ºC)", nomVarX = "Tiempo")
 
 
