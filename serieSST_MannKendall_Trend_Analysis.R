@@ -333,14 +333,12 @@ PlotSerieTiempoCelda <- function(r, xy, i = NULL, f = 1, nomVarY, nomVarX) {
     ts_cell <- as.vector(extract(r, xy))
   }
   
-  
   # Plot
   par(bg = "#D3D7CF")
   plot(x = 1:length(ts_cell), y = ts_cell, pch = 19, col = "#785DA7",
        xlab = paste(nomVarX), 
        ylab = paste(nomVar), 
-       #ylim = c(min(minValue(r)), max(maxValue(r))), 
-       #ylim = c(0, 250),
+       ylim = c(min(minValue(r)), max(maxValue(r))), 
        main = paste("Celda ", i, sep = ""))
   lines(x = 1:length(ts_cell), y = ts_cell, lwd = 0.5, col = "#785DA7")
   
@@ -354,7 +352,7 @@ PlotSerieTiempoCelda <- function(r, xy, i = NULL, f = 1, nomVarY, nomVarX) {
   sl <- as.character(round(raster.sl[i], digits = 5))
   sen <- as.character(round(raster.sen[i], digits = 5))
   
-  text(x = length(ts_cell)/2, y = 10, pos = 3, 
+  text(x = length(ts_cell)/2, y = min(minValue(r)), pos = 3, 
        labels = paste("tau = ", tau, " | p-value = ", sl, " | sen = ", sen, sep = ""), 
        cex = 1, col = "#272822")
   
