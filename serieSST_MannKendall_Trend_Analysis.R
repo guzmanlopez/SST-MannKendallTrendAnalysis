@@ -337,7 +337,7 @@ PlotSerieTiempoCelda <- function(r, xy, i = NULL, f = 1, nomVarY, nomVarX) {
   par(bg = "#D3D7CF")
   plot(x = 1:length(ts_cell), y = ts_cell, pch = 19, col = "#785DA7",
        xlab = paste(nomVarX), 
-       ylab = paste(nomVar), 
+       ylab = paste(nomVarY), 
        ylim = c(min(minValue(r)), max(maxValue(r))), 
        main = paste("Celda ", i, sep = ""))
   lines(x = 1:length(ts_cell), y = ts_cell, lwd = 0.5, col = "#785DA7")
@@ -360,6 +360,6 @@ PlotSerieTiempoCelda <- function(r, xy, i = NULL, f = 1, nomVarY, nomVarX) {
 
 # Probar función para una posición xy
 click()
-PlotSerieTiempoCelda(r = sst.rb.From1960To2017, xy = cbind(), f = 1, nomVarY = "SST (ºC)", nomVarX = "Tiempo")
+PlotSerieTiempoCelda(r = sst.rb.From1960To2017, xy = cbind(-52.75563,-36.93317), f = 1, nomVarY = "SST (ºC)", nomVarX = "Tiempo")
 
 
