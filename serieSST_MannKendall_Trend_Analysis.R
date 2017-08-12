@@ -116,11 +116,7 @@ sst.rb.From1960To2017 <- CreateRasterBrickSST(sst_spdf = sstReynoldsSPDF,
                                               ymax = -20) 
 
 # Write raster brick
-writeRaster(x = sst.rb.From1960To2017, filename = paste("sst.rb.From1960To2017", ".tif", sep = ""), format = "GTiff", overwritte = TRUE)
-
-# Load created raster brick
-sst.rb.From1960To2017 <- brick("sst.rb.From1960To2017.tif")
-#names(sst.rb.From1960To2017) <- paste("SST_", 19)
+writeRaster(x = sst.rb.From1960To2017, filename = paste("sst.rb.From1960To2017", ".tif", sep = ""), format = "GTiff", overwrite = TRUE)
 
 # Plot SST ----------------------------------------------------------------
 
@@ -142,17 +138,17 @@ PlotRaster <- function(raster, plotBati = TRUE, plotPaises = TRUE) {
   
   colTemp <- oceColors9A(n = 128)
   
-  plot(raster, colNA = 'black', useRaster = TRUE, interpolate = TRUE, col = colTemp, alpha = 1)
+  plot(raster, colNA = "#272822", useRaster = TRUE, interpolate = TRUE, col = colTemp, alpha = 1)
   if (plotBati) plot.bathy(bati, image = FALSE, shallowest.isobath = 0, deepest.isobath = -8500, step = 200, lwd = 0.1, add = TRUE)
   if(plotPaises) plot(paises, col = "black", border = 'white', lwd = 0.2, add = TRUE)
   
 }
 
 # Plot
-PlotRaster(raster = sst.rb.From1960To2017$sst.rb.From1960To2017.680)
+PlotRaster(raster = sst.rb.From1960To2017$SST_1961.03.01)
 
 # Mapa interactivo
-mapView(sst.rb.From1960To2017$sst.rb.From1960To2017.2, legend = TRUE, col.regions = oceColors9A(n = 256), layer.name = "sst", alpha.regions = 0.8) 
+mapView(sst.rb.From1960To2017$SST_1961.03.01, legend = TRUE, col.regions = oceColors9A(n = 256), layer.name = "sst", alpha.regions = 0.8) 
 
 # Análisis de tendencia de Mann-Kendall -----------------------------------
 
@@ -230,6 +226,18 @@ AnalisisMannKendall <- function(rb, cluster = TRUE, write = FALSE) {
 
 # Calcular métricas
 sst.rb.From1960To2017.mk <- AnalisisMannKendall(rb = sst.rb.From1960To2017, cluster = TRUE, write = TRUE)
+
+# Plots
+sst.rb.From1960To2017.mk.tau <- sst.rb.From1960To2017.mk$tau
+sst.rb.From1960To2017.mk.tau[which(values(sst.rb.From1960To2017.mk$tau == 1))] <- NA
+PlotRaster(sst.rb.From1960To2017.mk.tau) # tau
+
+sst.rb.From1960To2017.mk.sl <- sst.rb.From1960To2017.mk$sl
+sst.rb.From1960To2017.mk.sl[which(values(sst.rb.From1960To2017.mk$sl == 1))] <- NA
+PlotRaster(sst.rb.From1960To2017.mk.sl) # sl
+
+sst.rb.From1960To2017.mk.sen <- sst.rb.From1960To2017.mk$sen
+PlotRaster(sst.rb.From1960To2017.mk.sen) # sen
 
 # Escribir resultados a un archivo ----------------------------------------
 
@@ -311,11 +319,16 @@ AnalisisTendencia <- function(mk, df = df, tendencia = 1, pvalor = 0.05, write =
 }
 
 # Probar significancia positiva
-sen1 <- AnalisisTendencia(mk = sst.rb.From1960To2017.mk, df = df)
-
-# Plot
-X11()
+sen1 <- AnalisisTendencia(mk = sst.rb.From1960To2017.mk, df = df, tendencia = 1, pvalor = 0.05)
 PlotRaster(raster = sen1)
+
+# Probar significancia negativa
+sen2 <- AnalisisTendencia(mk = sst.rb.From1960To2017.mk, df = df, tendencia = -1, pvalor = 0.05)
+PlotRaster(raster = sen2)
+
+# Probar significancia cero
+sen3 <- AnalisisTendencia(mk = sst.rb.From1960To2017.mk, df = df, tendencia = 0, pvalor = 0.05)
+PlotRaster(raster = sen3)
 
 # Plot Serie de Tiempo para una celda -------------------------------------
 
@@ -324,13 +337,27 @@ PlotRaster(raster = sen1)
 # i = número de celda
 # f = factor de suavizado: es la proporción de puntos que influyen (valores mayores = más suavizado). Entre 0 y 1 (línea roja).
 
-PlotSerieTiempoCelda <- function(r, xy, i = NULL, f = 1, nomVarY, nomVarX) {
+PlotSerieTiempoCelda <- function(r, mk, xy, i = NULL, f = 1, nomVarY, nomVarX) {
   
   # Vector de datos
   if (!is.null(i)) {
+    
     ts_cell <- as.vector(extract(r, i))
+    
+    # Agregar resultado del Análisis de tendencias de Mann-Kendall
+    tau <- as.character(round(mk$tau[i], digits = 5))
+    sl <- as.character(round(mk$sl[i], digits = 5))
+    sen <- as.character(round(mk$sen[i], digits = 5))
+    
   } else {
+    
     ts_cell <- as.vector(extract(r, xy))
+    
+    # Agregar resultado del Análisis de tendencias de Mann-Kendall
+    tau <- as.character(round(as.vector(extract(mk$tau, xy)), digits = 5))
+    sl <- as.character(round(as.vector(extract(mk$sl, xy)), digits = 5))
+    sen <- as.character(round(as.vector(extract(mk$sen, xy)), digits = 5))
+    
   }
   
   # Plot
@@ -343,23 +370,17 @@ PlotSerieTiempoCelda <- function(r, xy, i = NULL, f = 1, nomVarY, nomVarX) {
   lines(x = 1:length(ts_cell), y = ts_cell, lwd = 0.5, col = "#785DA7")
   
   lines(lowess(x = 1:length(ts_cell), y = ts_cell, f = f), col = "#E12669", lwd = 2) # ajuste suavizado
-  #lines(smooth.spline(x = 1:length(ts_cell), y = ts_cell, spar = f), col = "#E12669", lwd = 2) # ajuste suavizado
-  
-  par(bg = "white")
-  
-  # Agregar resultado del Análisis de tendencias de Mann-Kendall
-  tau <- as.character(round(raster.tau[i], digits = 5))
-  sl <- as.character(round(raster.sl[i], digits = 5))
-  sen <- as.character(round(raster.sen[i], digits = 5))
-  
+  #lines(smooth.spline(x = 1:length(ts_cell), y = ts_cell, spar = f), col = "#E12669", lwd = 2) # ajuste suavizad
   text(x = length(ts_cell)/2, y = min(minValue(r)), pos = 3, 
        labels = paste("tau = ", tau, " | p-value = ", sl, " | sen = ", sen, sep = ""), 
        cex = 1, col = "#272822")
+  par(bg = "white")
   
 }
 
 # Probar función para una posición xy
-click()
-PlotSerieTiempoCelda(r = sst.rb.From1960To2017, xy = cbind(-52.75563,-36.93317), f = 1, nomVarY = "SST (ºC)", nomVarX = "Tiempo")
+click() # elegir punto clickeando en el mapa ploteado
+
+PlotSerieTiempoCelda(r = sst.rb.From1960To2017, mk = sst.rb.From1960To2017.mk, xy = cbind(-51.57595, -37.79489), f = 1, nomVarY = "SST (ºC)", nomVarX = "Tiempo")
 
 
