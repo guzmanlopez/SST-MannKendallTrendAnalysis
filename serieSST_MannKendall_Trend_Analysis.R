@@ -238,6 +238,7 @@ PlotRaster(sst.rb.From1960To2017.mk.sl) # sl
 
 sst.rb.From1960To2017.mk.sen <- sst.rb.From1960To2017.mk$sen
 PlotRaster(sst.rb.From1960To2017.mk.sen) # sen
+plot(rasterToContour(sst.rb.From1960To2017.mk.sen), add = TRUE, col = "#272822", lwd = 0.5)
 
 # Escribir resultados a un archivo ----------------------------------------
 
