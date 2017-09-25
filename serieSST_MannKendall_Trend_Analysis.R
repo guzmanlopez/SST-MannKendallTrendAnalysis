@@ -212,9 +212,9 @@ AnalisisMannKendall <- function(rb, cluster = TRUE, write = FALSE) {
     
     message("Escribiendo a un archivo...")
     name <- paste(names(rb)[1], "-", tail(names(rb))[6], sep = "")
-    writeRaster(x = raster.tau, filename = paste("rasterTau_", name, ".tif", sep = ""), format = "GTiff", overwritte = TRUE)
-    writeRaster(x = raster.sl, filename = paste("rasterSl_", name, ".tif", sep = ""), format = "GTiff", overwritte = TRUE)
-    writeRaster(x = raster.sen, filename = paste("rasterSen_", name, ".tif", sep = ""), format = "GTiff", overwritte = TRUE)
+    writeRaster(x = raster.tau, filename = paste("rasterTau_", name, ".tif", sep = ""), format = "GTiff", overwrite = TRUE)
+    writeRaster(x = raster.sl, filename = paste("rasterSl_", name, ".tif", sep = ""), format = "GTiff", overwrite = TRUE)
+    writeRaster(x = raster.sen, filename = paste("rasterSen_", name, ".tif", sep = ""), format = "GTiff", overwrite = TRUE)
     message("Terminado!")
   }
   
@@ -311,7 +311,7 @@ AnalisisTendencia <- function(mk, df = df, tendencia = 1, pvalor = 0.05, write =
   
   if (write) {
     message("Escribiendo archivo...")
-    writeRaster(x = sen, filename = paste(nombreArchivo, "_rasterSen.tif", sep = ""), format = "GTiff", overwritte = TRUE)
+    writeRaster(x = sen, filename = paste(nombreArchivo, "_rasterSen.tif", sep = ""), format = "GTiff", overwrite = TRUE)
     message("Terminado...")
   }
   
@@ -378,6 +378,7 @@ PlotSerieTiempoCelda <- function(r, mk, xy, i = NULL, f = 1, nomVarY, nomVarX) {
   par(bg = "white")
   
 }
+
 
 # Probar función para una posición xy
 click() # elegir punto clickeando en el mapa ploteado
